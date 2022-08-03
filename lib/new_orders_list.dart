@@ -1,39 +1,43 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
+import 'dart:convert' as convert;
 import 'package:flutter/material.dart';
 import 'package:fnf_orders/change_password.dart';
 import 'package:fnf_orders/constants.dart';
 import 'package:fnf_orders/login_page.dart';
 import 'package:http/http.dart' as http;
-import 'Models/OrdersModel.dart';
+import 'Models/NewOrdersModel.dart';
 import 'Utils/shared_class.dart';
 
-class OrdersList extends StatefulWidget {
-  const OrdersList({Key? key}) : super(key: key);
+class NewOrdersList extends StatefulWidget {
+  const NewOrdersList({Key? key}) : super(key: key);
 
   @override
-  State<OrdersList> createState() => _OrdersListState();
+  State<NewOrdersList> createState() => _NewOrdersListState();
 }
 
-class _OrdersListState extends State<OrdersList> {
+class _NewOrdersListState extends State<NewOrdersList> {
   // TODO Fetch Orders List From Server
   // Creating a List of OrdersModel
-  List<OrdersModel> userList = [];
-  var token = Constants.preferences?.getString('Token');
+  List<NewOrdersModel> userList = [];
+  static NewOrdersModel? newOrdersModel;
+  List<Product> productsList = [];
+  List _newList = [];
+  var userToken = Constants.preferences?.getString('Token');
   var fcm = Constants.preferences?.getString('FCM');
 
+  // TODO SEND FCM TOKEN TO SEVER API
   sendFcmToken() async {
     final response = await http.put(
-        Uri.parse('http://192.168.100.240:5000/api/update-fcm-token/'),
+        Uri.parse('http://192.168.100.174:8000/api/update-fcm-token/'),
         body: {
           "fcm_token": fcm,
         },
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
-          'Authorization': 'Token ${token}'
+          'Authorization': 'Token $userToken'
         });
-    if (response.body == 200) {
+    if (response.statusCode == 200) {
       var data = response.body.toString();
       print(data);
       print("Send FCM Token Successfully");
@@ -42,56 +46,42 @@ class _OrdersListState extends State<OrdersList> {
     }
   }
 
-  // TODO show firebase notifications
-  // showFirebaseNotifications(){
-  //   //Gives You the Message on Which User Taps
-  //   //And It Opened the App from Terminated State
-  //   FirebaseMessaging.instance.getInitialMessage().then((message) {
-  //     if (message != null) {
-  //       final routeFromMessage = message.data["route"];
-  //       Navigator.pushNamed(context, routeFromMessage);
-  //     }
-  //   });
-  //
-  //   // This Stream will call only When the Application in the Foreground not in the Background
-  //   FirebaseMessaging.onMessage.listen((message) {
-  //     if (message.notification != null) {
-  //       print(message.notification!.body);
-  //       print(message.notification!.title);
-  //     }
-  //     LocalNotificationService.display(message);
-  //   });
-  //
-  //   // When the App is in the Background but Opened and User Taps on the notification
-  //   FirebaseMessaging.onMessageOpenedApp.listen((message) {
-  //     final routeFromMessage = message.data["route"];
-  //     Navigator.pushNamed(context, routeFromMessage);
-  //     // print(routeFromMessage);
-  //   });
-  // }
-
-  Future<List<OrdersModel>> getUserApi() async {
+  Future<List<NewOrdersModel>?> getUserApi() async {
+    var token = Constants.preferences?.getString('Token');
     final response = await http
-        .get(Uri.parse('http://192.168.100.240:5000/api/myorders/'), headers: {
+        .get(Uri.parse('http://192.168.100.174:8000/api/orders/'), headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': 'application/json',
       'Authorization': 'Token $token',
     });
-    var data = jsonDecode(response.body.toString());
     print(fcm);
-    if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data get successfully")));
-      for (Map i in data) {
-        userList.add(OrdersModel.fromJson(i));
-        // // If you simple want to print one simple value then try this
-        // print(i['name']);
+    _newList = json.decode(response.body.toString());
+    // for(var i = 0; i < _newList.length; i++){
+    //   print(_newList[i]['items']);
+    // }
+
+    try {
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body.toString());
+        // print(data);
+        // List<Items> object = data['items'];
+        // for(var i = 0; i < object.length; i++){
+        //   print(object[i].product?.name);
+        // }
+        for (var item in data) {
+          userList.add(NewOrdersModel.fromJson(item));
+        }
+        return userList;
+      } else {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Failed to get")));
+        return userList;
       }
-      return userList;
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to get")));
-      return userList;
+    }catch(e){
+      print(e.toString());
     }
   }
+
 
   // TODO Popup Menu Button
   _myPopupButton() {
@@ -130,9 +120,7 @@ class _OrdersListState extends State<OrdersList> {
               PopupMenuItem(
                 child: ListTile(
                   onTap: () {
-                    Constants.preferences?.setBool("loggedIn", false);
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (ctx) => const LoginPage()));
+                    logoutFunction();
                   },
                   leading: const Icon(
                     Icons.logout,
@@ -151,247 +139,77 @@ class _OrdersListState extends State<OrdersList> {
             ]);
   }
 
-  // TODO TITLE HEADING
-  // Widget _buildExpansionTile() {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 15.0),
-  //     child: Card(
-  //       color: const Color(0xffFAF9F6),
-  //       child: ExpansionTile(
-  //         backgroundColor: const Color(0xffFAF9F6),
-  //         title: const Text("Order ID : 1", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
-  //         children: [
-  //           // const Divider(thickness: 1.3,),
-  //           Card(
-  //             color: mainColor,
-  //             child: ExpansionTile(
-  //               backgroundColor: mainColor,
-  //               iconColor: Colors.white,
-  //               textColor: Colors.white,
-  //               collapsedTextColor: Colors.white,
-  //               collapsedIconColor: Colors.white,
-  //               title: const Text("Customer", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
-  //               children: [
-  //                 Row(
-  //                   children: const [
-  //                     Padding(
-  //                       padding: EdgeInsets.only(left: 26.0),
-  //                       child: Align(
-  //                           alignment: Alignment.topLeft,
-  //                           child: Text(
-  //                             "Name",
-  //                             style: TextStyle(
-  //                                 color: Colors.white, fontWeight: FontWeight.bold),
-  //                           )),
-  //                     ),
-  //                     SizedBox(width: 79,),
-  //                     Text("Shakeeb Khan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
-  //                   ],
-  //                 ),
-  //                 const Divider(thickness: 1.3, color: Colors.white,),
-  //                 Row(
-  //                   children: const [
-  //                     Padding(
-  //                       padding: EdgeInsets.only(left: 26.0),
-  //                       child: Align(
-  //                           alignment: Alignment.topLeft,
-  //                           child: Text(
-  //                             "Phone#",
-  //                             style: TextStyle(
-  //                                 color: Colors.white, fontWeight: FontWeight.bold),
-  //                           )),
-  //                     ),
-  //                     SizedBox(width: 67,),
-  //                     Text("+923147896819", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
-  //                   ],
-  //                 ),
-  //                 const Divider(thickness: 1.3, color: Colors.white,),
-  //                 Row(
-  //                   children: const [
-  //                     Padding(
-  //                       padding: EdgeInsets.only(left: 25.0),
-  //                       child: Align(
-  //                           alignment: Alignment.topLeft,
-  //                           child: Text(
-  //                             "Address",
-  //                             style: TextStyle(
-  //                                 color: Colors.white, fontWeight: FontWeight.bold),
-  //                           )),
-  //                     ),
-  //                     SizedBox(width: 67,),
-  //                     Text("Timber Market", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
-  //                   ],
-  //                 ),
-  //                 const SizedBox(height: 10.0,),
-  //               ],
-  //             ),
-  //           ),
-  //           // const Divider(thickness: 1.3,),
-  //           Card(
-  //             color: mainColor,
-  //             child: ExpansionTile(
-  //               initiallyExpanded: true,
-  //               backgroundColor: mainColor,
-  //               iconColor: Colors.white,
-  //               textColor: Colors.white,
-  //               collapsedTextColor: Colors.white,
-  //               collapsedIconColor: Colors.white,
-  //               title: const Text("Products", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
-  //               children: [
-  //                 Row(
-  //                   children: const [
-  //                     Padding(
-  //                       padding: EdgeInsets.only(left: 26.0),
-  //                       child: Align(
-  //                           alignment: Alignment.topLeft,
-  //                           child: Text(
-  //                             "Name",
-  //                             style: TextStyle(
-  //                                 color: Colors.white, fontWeight: FontWeight.bold),
-  //                           )),
-  //                     ),
-  //                     SizedBox(width: 67,),
-  //                     Text("Dalda Ghee", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
-  //                   ],
-  //                 ),
-  //                 const Divider(thickness: 1.3, color: Colors.white,),
-  //                 Row(
-  //                   children: const [
-  //                     Padding(
-  //                       padding: EdgeInsets.only(left: 25.0),
-  //                       child: Align(
-  //                           alignment: Alignment.topLeft,
-  //                           child: Text(
-  //                             "Quantity",
-  //                             style: TextStyle(
-  //                                 color: Colors.white, fontWeight: FontWeight.bold),
-  //                           )),
-  //                     ),
-  //                     SizedBox(width: 67,),
-  //                     Text("3", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
-  //                   ],
-  //                 ),
-  //                 const SizedBox(height: 10,),
-  //               ],
-  //             ),
-  //           ),
-  //           const SizedBox(height: 15,),
-  //           Row(
-  //             children: const [
-  //               Padding(
-  //                 padding: EdgeInsets.only(left: 25.0),
-  //                 child: Align(
-  //                     alignment: Alignment.topLeft,
-  //                     child: Text(
-  //                       "Total Amount",
-  //                       style: TextStyle(
-  //                           color: Colors.black87, fontWeight: FontWeight.bold),
-  //                     )),
-  //               ),
-  //               SizedBox(width: 67,),
-  //               Text("200", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),),
-  //             ],
-  //           ),
-  //           const Divider(thickness: 1.3,),
-  //           Row(
-  //             children: const [
-  //               Padding(
-  //                 padding: EdgeInsets.only(left: 25.0),
-  //                 child: Align(
-  //                     alignment: Alignment.topLeft,
-  //                     child: Text(
-  //                       "Discount Amount",
-  //                       style: TextStyle(
-  //                           color: Colors.black87, fontWeight: FontWeight.bold),
-  //                     )),
-  //               ),
-  //               SizedBox(width: 44,),
-  //               Text("50", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),),
-  //             ],
-  //           ),
-  //           const Divider(thickness: 1.3,),
-  //           Row(
-  //             children: const [
-  //               Padding(
-  //                 padding: EdgeInsets.only(left: 25.0),
-  //                 child: Align(
-  //                     alignment: Alignment.topLeft,
-  //                     child: Text(
-  //                       "Subtotal Amount",
-  //                       style: TextStyle(
-  //                           color: Colors.black87, fontWeight: FontWeight.bold),
-  //                     )),
-  //               ),
-  //               SizedBox(width: 46,),
-  //               Text("150", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),),
-  //             ],
-  //           ),
-  //           const Divider(thickness: 1.3,),
-  //           Row(
-  //             children: const [
-  //               Padding(
-  //                 padding: EdgeInsets.only(left: 25.0),
-  //                 child: Align(
-  //                     alignment: Alignment.topLeft,
-  //                     child: Text(
-  //                       "Status",
-  //                       style: TextStyle(
-  //                           color: Colors.black87, fontWeight: FontWeight.bold),
-  //                     )),
-  //               ),
-  //               SizedBox(width: 115,),
-  //               Text("Pending", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 20),),
-  //             ],
-  //           ),
-  //           const Divider(thickness: 1.3,),
-  //           Row(
-  //             children: [
-  //               const Padding(
-  //                 padding: EdgeInsets.only(left: 25.0),
-  //                 child: Align(
-  //                     alignment: Alignment.topLeft,
-  //                     child: Text(
-  //                       "Change Status",
-  //                       style: TextStyle(
-  //                           color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
-  //                     )),
-  //               ),
-  //               const SizedBox(width: 50,),
-  //               DropdownButton(
-  //                 hint: const Text('Status Order'), // Not necessary for Option 1
-  //                 value: _selectedLocation,
-  //                 onChanged: (newValue) {
-  //                   setState(() {
-  //                     _selectedLocation = newValue.toString();
-  //                   });
-  //                 },
-  //                 items: _locations.map((location) {
-  //                   return DropdownMenuItem(
-  //                     child: Text(location),
-  //                     value: location,
-  //                   );
-  //                 }).toList(),
-  //               ),
-  //
-  //             ],
-  //           ),
-  //           const Divider(thickness: 1.3,),
-  //           const SizedBox(height: 20,),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
+  // TODO LOGOUT CONFIRM FUNCTION
+  logoutFunction() {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: const Padding(
+                padding: EdgeInsets.only(left: 12.0),
+                child: Text(
+                  "Do you want to logout?",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+                )),
+            actions: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  MaterialButton(
+                    color: Colors.redAccent,
+                    onPressed: () {
+                      Constants.preferences?.setBool("loggedIn", false);
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (ctx) => const LoginPage()));
+                    },
+                    child: const Text(
+                      "Yes",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  MaterialButton(
+                    color: Colors.green,
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const NewOrdersList()));
+                    },
+                    child: const Text(
+                      "No",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  )
+                ],
+              )
+            ],
+          );
+        });
+  }
+
+  // TODO Refresh List Function
+  Future<void> refreshList() async {
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() {
+      userList.clear();
+    });
+  }
 
   @override
   void initState() {
     sendFcmToken();
-    getUserApi();
     super.initState();
+    getUserApi();
+    refreshList();
   }
 
   @override
   Widget build(BuildContext context) {
+    List<Items>? obj;
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -413,7 +231,6 @@ class _OrdersListState extends State<OrdersList> {
                     child: Align(
                         alignment: Alignment.topLeft,
                         child: Row(
-                          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               "Orders",
@@ -432,101 +249,73 @@ class _OrdersListState extends State<OrdersList> {
                             const SizedBox(
                               width: 185,
                             ),
-                            // CircleAvatar(
-                            //   radius: 18,
-                            //   backgroundColor: Colors.white,
-                            //   foregroundColor: Colors.grey,
-                            //   child: IconButton(
-                            //     onPressed: () {
-                            //       PopupMenuButton;
-                            //     },
-                            //     icon: const Icon(
-                            //       CupertinoIcons.ellipsis_vertical,
-                            //       color: Colors.redAccent,
-                            //       size: 20,
-                            //     ),
-                            //   ),
-                            // ),
                             _myPopupButton(),
                             const SizedBox(
                               width: 10,
                             ),
-                            // CircleAvatar(
-                            //   radius: 18,
-                            //   backgroundColor: Colors.white,
-                            //   foregroundColor: Colors.grey,
-                            //   child: IconButton(
-                            //     onPressed: () {
-                            //       Constants.preferences
-                            //           ?.setBool("loggedIn", false);
-                            //       Navigator.pushReplacement(
-                            //           context,
-                            //           MaterialPageRoute(
-                            //               builder: (ctx) => const LoginPage()));
-                            //     },
-                            //     icon: const Icon(
-                            //       Icons.logout,
-                            //       color: Colors.redAccent,
-                            //       size: 20,
-                            //     ),
-                            //   ),
-                            // ),
                           ],
                         ))),
                 const SizedBox(
                   height: 20,
                 ),
                 Expanded(
-                  child: FutureBuilder(
-                    future: getUserApi(),
-                    builder:
-                        (context, AsyncSnapshot<List<OrdersModel>> snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
-                        );
-                      } else {
-                        return ListView.builder(
-                          itemCount: userList.length,
-                          itemBuilder: (context, index) {
-                            return ReusableRow(
-                              orderID: snapshot.data![index].id.toString(),
-                              customerName: "Shakeeb Khan",
-                              customerPhoneNumber: "+923147896819",
-                              customerAddress: "Ibrahim Town",
-                              productID: snapshot
-                                  .data![index].items![0].product!.id
-                                  .toString(),
-                              productName: userList[index]
-                                  .items![0]
-                                  .product!
-                                  .name
-                                  .toString(),
-                              productPrice: snapshot
-                                  .data![index].items![0].product!.price
-                                  .toString(),
-                              productUnit: snapshot
-                                      .data![index].items![0].product!.weight
-                                      .toString() +
-                                  " " +
-                                  snapshot.data![index].items![0].product!.uom
-                                      .toString(),
-                              totalAmount:
-                                  snapshot.data![index].total.toString(),
-                              discountAmount:
-                                  snapshot.data![index].discount.toString(),
-                              subTotalAmount:
-                                  snapshot.data![index].subTotal.toString(),
-                              status: snapshot.data![index].status.toString(),
-                              quantity: snapshot.data![index].items![0].quantity
-                                  .toString(),
-                            );
-                          },
-                        );
-                      }
-                    },
+                  child: RefreshIndicator(
+                    child: FutureBuilder(
+                      future: getUserApi(),
+                      builder: (context,
+                          AsyncSnapshot<List<NewOrdersModel>?> snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          );
+                        } else {
+                          return ListView.builder(
+                            itemCount: snapshot.data?.length,
+                            itemBuilder: (context, index) {
+                              // obj = snapshot.data![index].items;
+                              // obj?.map((e) {
+                              //   print(e.product?.name);
+                              // }).toList();
+                              return ReusableRow(
+                                orderID: snapshot.data![index].id.toString(),
+                                customerName: snapshot.data![index].user?.name.toString(),
+                                customerPhoneNumber:
+                                    snapshot.data![index].user?.phoneNumber,
+                                customerAddress:
+                                    snapshot.data![index].user?.address.toString(),
+                                productID: snapshot
+                                    .data![index].items![0].product?.id
+                                    .toString(),
+                                productName: _newList[index]['items'],
+                                // productName: newOrdersModel?.items?[0].product?.name,
+                                productPrice: snapshot
+                                    .data![index].items![0].product!.price
+                                    .toString(),
+                                productUnit: snapshot
+                                        .data![index].items![0].product!.weight
+                                        .toString() +
+                                    " " +
+                                    snapshot.data![index].items![0].product!.uom
+                                        .toString(),
+                                totalAmount:
+                                    snapshot.data![index].total.toString(),
+                                discountAmount:
+                                    snapshot.data![index].discount.toString(),
+                                subTotalAmount:
+                                    snapshot.data![index].subTotal.toString(),
+                                status: snapshot.data![index].status.toString(),
+                                quantity: snapshot
+                                    .data![index].items![0].quantity
+                                    .toString(),
+                              );
+                            },
+                          );
+                        }
+                      },
+                    ),
+                    onRefresh: refreshList,
                   ),
                 )
               ],
@@ -538,13 +327,28 @@ class _OrdersListState extends State<OrdersList> {
   }
 }
 
+_Product_ExpandAble_List_Builder(int cat_id) {
+  List<Widget> columnContent = [];
+  [1, 2, 4, 5].forEach((product) => {
+    columnContent.add(
+      ListTile(
+        title: ExpansionTile(
+          title: Text(product.toString()),
+        ),
+        trailing: Text("$product (Kg)"),
+      ),
+    ),
+  });
+  return columnContent;
+}
+
 class ReusableRow extends StatefulWidget {
   var orderID;
   String? customerName;
   String? customerPhoneNumber;
   String? customerAddress;
   String? productID;
-  String? productName;
+  var productName;
   var productPrice;
   var productUnit;
   var quantity;
@@ -572,18 +376,46 @@ class ReusableRow extends StatefulWidget {
 }
 
 class _ReusableRowState extends State<ReusableRow> {
+  var token = Constants.preferences?.getString('Token');
+  String? _selectedLocation;
+
+  final List<String> _locations = [
+    'Pending',
+    'Received',
+    'Processed',
+    'Shipped',
+    'Delivered',
+    'Cancelled'
+  ];
+
+  // TODO CHANGE ORDER STATUS
+  changeOrderStatus() async {
+    var url = 'http://192.168.100.174:8000/api/orders/' +
+        widget.orderID.toString() +
+        '/';
+    final response = await http.patch(Uri.parse(url), body: {
+      "status": _selectedLocation?.toLowerCase()
+    }, headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json',
+      'Authorization': 'Token $token'
+    });
+    var data = jsonDecode(response.body.toString());
+    if (response.statusCode != 200) {
+      print(data);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(data),
+      ));
+    } else {
+      print("Failed to Change Status");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Change Status Failed"),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<String> _locations = [
-      'Pending',
-      'Received',
-      'Processed',
-      'Shipped',
-      'Delivered',
-      'Cancelled'
-    ];
-    String? _selectedLocation;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
       child: Card(
@@ -679,10 +511,15 @@ class _ReusableRowState extends State<ReusableRow> {
                       const SizedBox(
                         width: 67,
                       ),
-                      Text(
-                        "${widget.customerAddress}",
-                        style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
+                      Wrap(
+                        children: [
+                          Text(
+                            "${widget.customerAddress}",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -734,28 +571,31 @@ class _ReusableRowState extends State<ReusableRow> {
                     thickness: 1.3,
                     color: Colors.white,
                   ),
-                  Row(
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(left: 26.0),
-                        child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              "Name",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            )),
-                      ),
-                      const SizedBox(
-                        width: 67,
-                      ),
-                      Text(
-                        "${widget.productName}",
-                        style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(left: 26.0),
+                          child: Align(
+                              alignment: Alignment.topLeft,
+                              child: Text(
+                                "Name",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              )),
+                        ),
+                        const SizedBox(
+                          width: 67,
+                        ),
+                        Text(
+                          "${widget.productName}",
+                          style: const TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
                   ),
                   const Divider(
                     thickness: 1.3,
@@ -944,7 +784,7 @@ class _ReusableRowState extends State<ReusableRow> {
                   width: 115,
                 ),
                 Text(
-                  "${widget.status}",
+                  "${widget.status?.toUpperCase()}",
                   style: const TextStyle(
                       color: Colors.red,
                       fontWeight: FontWeight.bold,
@@ -992,6 +832,20 @@ class _ReusableRowState extends State<ReusableRow> {
             ),
             const Divider(
               thickness: 1.3,
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            MaterialButton(
+              onPressed: () {
+                changeOrderStatus();
+              },
+              color: mainColor,
+              child: const Text(
+                "Status Changes",
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(
               height: 20,

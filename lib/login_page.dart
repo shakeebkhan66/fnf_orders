@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:http/http.dart';
 import 'Utils/shared_class.dart';
 import 'constants.dart';
+import 'new_orders_list.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -31,17 +31,16 @@ class _LoginPageState extends State<LoginPage> {
     Constants.preferences?.setString('FCM', token.toString());
     print("FCM Token is $token");
     FirebaseMessaging.instance.onTokenRefresh.listen((event) {
-      token = event;
     });
   }
-
 
   // TODO LOGIN THROUGH SERVER API
   bool isLoading = false;
   login(String username, password)async{
     try{
       var response = await post(
-          Uri.parse('http://192.168.100.240:5000/api/login/'),
+          // Uri.parse('http://192.168.100.240:5000/api/login/'),
+        Uri.parse('http://192.168.100.174:8000/api/login/'),
           body: {
             "username": username,
             "password": password,
@@ -59,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
         setState(() {
           isLoading = true;
         });
-        Navigator.push(context, MaterialPageRoute(builder: (ctx) => const OrdersList()));
+        Navigator.push(context, MaterialPageRoute(builder: (ctx) => NewOrdersList()));
       }else{
         print("Failed");
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Login Failed")));
@@ -156,20 +155,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // TODO Forgot Password Button
-  Widget _buildForgetPasswordButton() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        MaterialButton(
-          onPressed: () {},
-          child: const Text("Forgot Password"),
-        ),
-      ],
-    );
-  }
-
   // TODO Login Button
   Widget _buildLoginButton() {
     return Row(
@@ -211,56 +196,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Widget _buildOrRow() {
-  //   return Row(
-  //     mainAxisAlignment: MainAxisAlignment.center,
-  //     children: <Widget>[
-  //       Container(
-  //         margin: const EdgeInsets.only(bottom: 20),
-  //         child: const Text(
-  //           '- OR -',
-  //           style: TextStyle(
-  //             fontWeight: FontWeight.w400,
-  //           ),
-  //         ),
-  //       )
-  //     ],
-  //   );
-  // }
-
-  // Widget _buildSocialBtnRow() {
-  //   return Row(
-  //     mainAxisAlignment: MainAxisAlignment.center,
-  //     children: <Widget>[
-  //       GestureDetector(
-  //         onTap: () {},
-  //         child: Container(
-  //           height: 60,
-  //           width: 60,
-  //           decoration: const BoxDecoration(
-  //             shape: BoxShape.circle,
-  //             color: mainColor,
-  //             boxShadow: [
-  //               BoxShadow(
-  //                   color: Colors.black26,
-  //                   offset: Offset(0, 2),
-  //                   blurRadius: 6.0)
-  //             ],
-  //           ),
-  //           child: const Icon(
-  //             FontAwesomeIcons.google,
-  //             color: Colors.white,
-  //           ),
-  //         ),
-  //       )
-  //     ],
-  //   );
-  // }
-
-
-  // TODO Container or Card Design On Stack
-
-
+  // TODO Container Design
   Widget _buildContainer() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -292,7 +228,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 _buildEmailRow(),
                 _buildPasswordRow(),
-                _buildForgetPasswordButton(),
+                // _buildForgetPasswordButton(),
+                const SizedBox(height: 25.0,),
                 _buildLoginButton(),
                 // _buildOrRow(),
                 // _buildSocialBtnRow(),
@@ -303,6 +240,86 @@ class _LoginPageState extends State<LoginPage> {
       ],
     );
   }
+
+  // TODO Forgot Password Button
+  // Widget _buildForgetPasswordButton() {
+  //   return Row(
+  //     mainAxisAlignment: MainAxisAlignment.start,
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: <Widget>[
+  //       MaterialButton(
+  //         onPressed: () {},
+  //         child: const Text("Forgot Password"),
+  //       ),
+  //     ],
+  //   );
+  // }
+
+  // TODO Login Button// TODO Forgot Password Button
+  //   // Widget _buildForgetPasswordButton() {
+  //   //   return Row(
+  //   //     mainAxisAlignment: MainAxisAlignment.start,
+  //   //     crossAxisAlignment: CrossAxisAlignment.start,
+  //   //     children: <Widget>[
+  //   //       MaterialButton(
+  //   //         onPressed: () {},
+  //   //         child: const Text("Forgot Password"),
+  //   //       ),
+  //   //     ],
+  //   //   );
+  //   // }
+  //
+  //   // TODO Login Button
+
+  // Widget _buildOrRow() {
+  //   return Row(
+  //     mainAxisAlignment: MainAxisAlignment.center,
+  //     children: <Widget>[
+  //       Container(
+  //         margin: const EdgeInsets.only(bottom: 20),
+  //         child: const Text(
+  //           '- OR -',
+  //           style: TextStyle(
+  //             fontWeight: FontWeight.w400,
+  //           ),
+  //         ),
+  //       )
+  //     ],
+  //   );
+  // }
+
+  // Widget _buildSocialBtnRow() {
+  //   return Row(
+
+  //     mainAxisAlignment: MainAxisAlignment.center,
+  //     children: <Widget>[
+  //       GestureDetector(
+  //         onTap: () {},
+  //         child: Container(
+  //           height: 60,
+  //           width: 60,
+  //           decoration: const BoxDecoration(
+  //             shape: BoxShape.circle,
+  //             color: mainColor,
+  //             boxShadow: [
+  //               BoxShadow(
+  //                   color: Colors.black26,
+  //                   offset: Offset(0, 2),
+  //                   blurRadius: 6.0)
+  //             ],
+  //           ),
+  //           child: const Icon(
+  //             FontAwesomeIcons.google,
+  //             color: Colors.white,
+  //           ),
+  //         ),
+  //       )
+  //     ],
+  //   );
+  // }
+
+
+  // TODO Container or Card Design On Stack
 
   // Widget _buildSignUpBtn() {
   //   return Row(
