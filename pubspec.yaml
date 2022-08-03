@@ -41,6 +41,7 @@ dependencies:
   get: ^4.6.5
   shared_preferences: ^2.0.15
   flutter_local_notifications: ^9.7.0
+#  firebase_analytics:
 
 dev_dependencies:
   flutter_test:

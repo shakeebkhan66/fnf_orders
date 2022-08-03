@@ -28,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> setupToken() async {
     // Get the token each time the application loads
     String? token = await FirebaseMessaging.instance.getToken();
-    Constants.preferences?.setString('FCM', token!);
+    Constants.preferences?.setString('FCM', token.toString());
     print("FCM Token is $token");
     FirebaseMessaging.instance.onTokenRefresh.listen((event) {
       token = event;

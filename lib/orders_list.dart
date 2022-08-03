@@ -1,7 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
-
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fnf_orders/change_password.dart';
@@ -9,7 +6,6 @@ import 'package:fnf_orders/constants.dart';
 import 'package:fnf_orders/login_page.dart';
 import 'package:http/http.dart' as http;
 import 'Models/OrdersModel.dart';
-import 'Services/local_notification_service.dart';
 import 'Utils/shared_class.dart';
 
 class OrdersList extends StatefulWidget {
