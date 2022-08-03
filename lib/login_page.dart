@@ -9,6 +9,7 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:http/http.dart';
 import 'Utils/shared_class.dart';
 import 'constants.dart';
+import 'new_orders_list.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -31,7 +32,6 @@ class _LoginPageState extends State<LoginPage> {
     Constants.preferences?.setString('FCM', token.toString());
     print("FCM Token is $token");
     FirebaseMessaging.instance.onTokenRefresh.listen((event) {
-      token = event;
     });
   }
 
@@ -59,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
         setState(() {
           isLoading = true;
         });
-        Navigator.push(context, MaterialPageRoute(builder: (ctx) => const OrdersList()));
+        Navigator.push(context, MaterialPageRoute(builder: (ctx) => NewOrdersList()));
       }else{
         print("Failed");
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Login Failed")));
@@ -157,18 +157,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // TODO Forgot Password Button
-  Widget _buildForgetPasswordButton() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        MaterialButton(
-          onPressed: () {},
-          child: const Text("Forgot Password"),
-        ),
-      ],
-    );
-  }
+  // Widget _buildForgetPasswordButton() {
+  //   return Row(
+  //     mainAxisAlignment: MainAxisAlignment.start,
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: <Widget>[
+  //       MaterialButton(
+  //         onPressed: () {},
+  //         child: const Text("Forgot Password"),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   // TODO Login Button
   Widget _buildLoginButton() {
@@ -292,7 +292,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 _buildEmailRow(),
                 _buildPasswordRow(),
-                _buildForgetPasswordButton(),
+                // _buildForgetPasswordButton(),
+                 const SizedBox(height: 25.0,),
                 _buildLoginButton(),
                 // _buildOrRow(),
                 // _buildSocialBtnRow(),

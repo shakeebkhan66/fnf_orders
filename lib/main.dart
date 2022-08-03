@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Utils/shared_class.dart';
 import 'login_page.dart';
+import 'orders_list.dart';
 
 // TODO Receive Message when app is in the background solution for on message
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -90,10 +91,10 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'FnF Orders',
-      // home: Constants.preferences?.getBool("loggedIn") == true
-      //     ? OrdersList()
-      //     : LoginPage(),
-      home: FirstScreen(),
+      home: Constants.preferences?.getBool("loggedIn") == true
+          ? OrdersList()
+          : FirstScreen(),
+      // home: FirstScreen(),
     );
   }
 }
